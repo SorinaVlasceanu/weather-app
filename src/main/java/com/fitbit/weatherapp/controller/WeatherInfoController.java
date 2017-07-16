@@ -4,7 +4,6 @@ import com.fitbit.weatherapp.DTO.ResponseDTO;
 import com.fitbit.weatherapp.model.WeatherModel;
 import com.fitbit.weatherapp.service.WeatherInfoServiceImpl;
 import com.fitbit.weatherapp.util.ErrorMessage;
-import javafx.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
