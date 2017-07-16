@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -33,17 +32,25 @@ public class WWOHelper {
     /**
      * Constructs and returns the object that is to be stored in database.
      * Uses two other private methods to populate currentWeather and forecast fields.
+     *
      * @param cityName
      * @param cachedWeatherModel
      * @return CachedWeatherModel object containing information extracted from request to WWO API
+     * @throws IllegalArgumentException if the WWO API returns an error message
      */
     public CachedWeatherModel mapCachedModel(String cityName, CachedWeatherModel cachedWeatherModel) {
 
         JsonObject wwoJsonObject = getWWOInfo(cityName);
-        cachedWeatherModel.setCity(cityName);
-        cachedWeatherModel.setLastUpdatedAt(System.currentTimeMillis());
-        cachedWeatherModel.setCurrentWeather(mapCurrentInfo(wwoJsonObject));
-        cachedWeatherModel.setForecast(mapForecastInfo(wwoJsonObject));
+        JsonArray errorObject = wwoJsonObject.getAsJsonObject("data").getAsJsonArray("error");
+
+        if (errorObject == null) {
+            cachedWeatherModel.setCity(cityName);
+            cachedWeatherModel.setLastUpdatedAt(System.currentTimeMillis());
+            cachedWeatherModel.setCurrentWeather(mapCurrentInfo(wwoJsonObject));
+            cachedWeatherModel.setForecast(mapForecastInfo(wwoJsonObject));
+        } else {
+            throw new IllegalArgumentException(errorObject.get(0).getAsJsonObject().get("msg").getAsString());
+        }
 
         return cachedWeatherModel;
     }
@@ -51,6 +58,7 @@ public class WWOHelper {
     /**
      * Constructs and returns the object containing current weather information.
      * Information is extracted from jsonObject returned by WWO API
+     *
      * @param wwoJsonObject
      * @return WeatherModel object with info about current weather
      */
@@ -68,6 +76,7 @@ public class WWOHelper {
     /**
      * Constructs and returns the object containing forecast information.
      * Information is extracted from jsonObject returned by WWO API
+     *
      * @param wwoJsonObject
      * @return a list of WeatherModel objects with info about forecast
      */
@@ -111,6 +120,7 @@ public class WWOHelper {
      * Queries WWO API for information regarding the current weather and forecast for a given city.
      * The names of the query parameters have been represented using enums to avoid errors (passing in wrong constants)
      * and document the meaning of the params in a more human-readable way
+     *
      * @param cityName
      * @return com.google.gson.JsonObject used for mapping custom objects
      */
@@ -126,14 +136,8 @@ public class WWOHelper {
         ResponseEntity<String> response = restTemplate.getForEntity(reqURL, String.class);
         log4j.info("--------------RESPONSE BODY---------------\n" + response.getBody());
 
-        JsonObject wwoResponse = null;
-        JsonParser parser;
 
-        if (response.getStatusCode().equals(HttpStatus.OK)) {
-            parser = new JsonParser();
-            wwoResponse = parser.parse(response.getBody()).getAsJsonObject();
-        }
+        return new JsonParser().parse(response.getBody()).getAsJsonObject();
 
-        return wwoResponse;
     }
 }

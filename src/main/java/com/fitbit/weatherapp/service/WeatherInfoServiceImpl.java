@@ -23,12 +23,14 @@ public class WeatherInfoServiceImpl implements WeatherInfoService {
     private CachedWeatherRepository cachedWeatherRepository;
 
     private static final Long INTERVAL = 60 * 60 * 1000L;
+    private final Object lock = new Object();
 
     /**
      * Creates a base object (WeatherModel) representing the current weather
      * conditions for a given city.
      * Makes use of helper and repository methods to construct the object.
      * Limits the number of requests to the WWO API at 1/h/city
+     *
      * @param cityName
      * @return WeatherModel
      */
@@ -36,32 +38,36 @@ public class WeatherInfoServiceImpl implements WeatherInfoService {
     public WeatherModel getCurrentWeatherByCity(String cityName) {
 
         WeatherModel currentWeather;
-        CachedWeatherModel cachedWeatherModel = cachedWeatherRepository.findLastUpdatedByCity(cityName);
         boolean hourPassed;
 
-        if (cachedWeatherModel == null) {
-            cachedWeatherModel = wwoHelper.mapCachedModel(cityName, new CachedWeatherModel());
-            currentWeather = cachedWeatherRepository.save(cachedWeatherModel).getCurrentWeather();
-        } else {
-            hourPassed = System.currentTimeMillis() >= cachedWeatherModel.getLastUpdatedAt() + INTERVAL;
-            if (hourPassed) {
-                cachedWeatherModel = wwoHelper.mapCachedModel(cityName, cachedWeatherModel);
+        synchronized (lock) {
+            CachedWeatherModel cachedWeatherModel = cachedWeatherRepository.findLastUpdatedByCity(cityName);
+
+            if (cachedWeatherModel == null) {
+                cachedWeatherModel = wwoHelper.mapCachedModel(cityName, new CachedWeatherModel());
                 currentWeather = cachedWeatherRepository.save(cachedWeatherModel).getCurrentWeather();
             } else {
-                currentWeather = cachedWeatherRepository.findCurrentWeatherByCity(cityName).getCurrentWeather();
-            }
+                hourPassed = System.currentTimeMillis() >= cachedWeatherModel.getLastUpdatedAt() + INTERVAL;
+                if (hourPassed) {
+                    cachedWeatherModel = wwoHelper.mapCachedModel(cityName, cachedWeatherModel);
+                    currentWeather = cachedWeatherRepository.save(cachedWeatherModel).getCurrentWeather();
+                } else {
+                    currentWeather = cachedWeatherRepository.findCurrentWeatherByCity(cityName).getCurrentWeather();
+                }
 
+            }
         }
 
         return currentWeather;
-
     }
+
 
     /**
      * Creates a list of base objects (WeatherModel) representing the three day forecast
      * for a given city.
      * Makes use of helper and repository methods to construct the list.
      * Limits the number of requests to the WWO API at 1/h/city
+     *
      * @param cityName
      * @return List<WeatherModel>
      */
@@ -69,26 +75,27 @@ public class WeatherInfoServiceImpl implements WeatherInfoService {
     @Override
     public List<WeatherModel> getForecastWeatherByCity(String cityName) {
 
-        List<WeatherModel> forecastWeather;
-        CachedWeatherModel cachedWeatherModel = cachedWeatherRepository.findLastUpdatedByCity(cityName);
+        List<WeatherModel> forecast;
         boolean hourPassed;
 
-        if (cachedWeatherModel == null) {
-            cachedWeatherModel = wwoHelper.mapCachedModel(cityName, new CachedWeatherModel());
-            forecastWeather = cachedWeatherRepository.save(cachedWeatherModel).getForecast();
-        } else {
-            hourPassed = System.currentTimeMillis() >= cachedWeatherModel.getLastUpdatedAt() + INTERVAL;
-            if (hourPassed) {
-                cachedWeatherModel = wwoHelper.mapCachedModel(cityName, cachedWeatherModel);
-                forecastWeather = cachedWeatherRepository.save(cachedWeatherModel).getForecast();
+        synchronized (lock) {
+            CachedWeatherModel cachedWeatherModel = cachedWeatherRepository.findLastUpdatedByCity(cityName);
+            if (cachedWeatherModel == null) {
+                cachedWeatherModel = wwoHelper.mapCachedModel(cityName, new CachedWeatherModel());
+                forecast = cachedWeatherRepository.save(cachedWeatherModel).getForecast();
             } else {
-                forecastWeather = cachedWeatherRepository.findForecastByCity(cityName).getForecast();
+                hourPassed = System.currentTimeMillis() >= cachedWeatherModel.getLastUpdatedAt() + INTERVAL;
+                if (hourPassed) {
+                    cachedWeatherModel = wwoHelper.mapCachedModel(cityName, cachedWeatherModel);
+                    forecast = cachedWeatherRepository.save(cachedWeatherModel).getForecast();
+                } else {
+                    forecast = cachedWeatherRepository.findForecastByCity(cityName).getForecast();
+                }
+
             }
 
         }
 
-        return forecastWeather;
-
-
+        return forecast;
     }
 }
