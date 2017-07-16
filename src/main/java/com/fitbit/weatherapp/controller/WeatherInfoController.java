@@ -22,12 +22,12 @@ public class WeatherInfoController {
     WeatherInfoServiceImpl weatherInfoServiceImpl;
 
     @GetMapping(value = "/current", produces = "application/json")
-    public ResponseDTO getCurrentWeatherByCity(@RequestParam("city") String cityName) {
+    public ResponseDTO getCurrentWeatherByCity(@RequestParam(value="city", required=false) String cityName) {
         ResponseDTO responseDTO = new ResponseDTO();
-        if (cityName.isEmpty()) {
+        if (cityName == null || cityName.isEmpty() ) {
             responseDTO.setStatus(HttpStatus.BAD_REQUEST.value());
             responseDTO.setMessage(HttpStatus.BAD_REQUEST.getReasonPhrase());
-            responseDTO.setNotification(ErrorMessage.NULL_CITY_PARAM.getValue());
+            responseDTO.setNotification(ErrorMessage.NULL_OR_MISSING_CITY_PARAM.getValue());
 
         } else {
             try {
@@ -47,13 +47,13 @@ public class WeatherInfoController {
     }
 
     @GetMapping(value = "/forecast", produces = "application/json")
-    public ResponseDTO getForecastByCity(@RequestParam("city") String cityName) {
+    public ResponseDTO getForecastByCity(@RequestParam(value="city", required=false) String cityName) {
         ResponseDTO responseDTO = new ResponseDTO();
 
-        if (cityName.isEmpty()) {
+        if (cityName == null || cityName.isEmpty()) {
             responseDTO.setStatus(HttpStatus.BAD_REQUEST.value());
             responseDTO.setMessage(HttpStatus.BAD_REQUEST.getReasonPhrase());
-            responseDTO.setNotification(ErrorMessage.NULL_CITY_PARAM.getValue());
+            responseDTO.setNotification(ErrorMessage.NULL_OR_MISSING_CITY_PARAM.getValue());
 
         } else {
             try {

@@ -4,7 +4,7 @@ package com.fitbit.weatherapp.util;
  * Created by Sorina23 on 7/15/2017.
  */
 public enum ErrorMessage {
-    NULL_CITY_PARAM("City name cannot be null!");
+    NULL_OR_MISSING_CITY_PARAM("Required String parameter 'city' is null or missing!");
 
     private String value;
 

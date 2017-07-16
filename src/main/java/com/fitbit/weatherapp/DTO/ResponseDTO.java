@@ -7,7 +7,7 @@ public class ResponseDTO {
 
     private Integer status;
     private String message;
-    private String notification;
+    private String notification="";
     private Object data;
 
     public Integer getStatus() {
