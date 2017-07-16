@@ -1,7 +1,5 @@
 package com.fitbit.weatherapp.DTO;
 
-import javafx.util.Pair;
-
 /**
  * Created by Sorina23 on 7/16/2017.
  */
